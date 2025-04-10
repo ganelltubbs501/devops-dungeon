@@ -1,19 +1,29 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 
 export default function PipelinePanel() {
   const [status, setStatus] = useState('idle');
   const [buildResult, setBuildResult] = useState(null);
 
-  const runBuild = () => {
+  const runBuild = async () => {
     setStatus('building');
     setBuildResult(null);
 
-    // Simulate build time
-    setTimeout(() => {
-      const success = Math.random() > 0.3;
-      setStatus(success ? 'success' : 'fail');
-      setBuildResult(success ? '✅ Build succeeded' : '❌ Build failed');
-    }, 2000);
+    try {
+      // Trigger the build by calling the backend API
+      await axios.post('http://localhost:5000/api/trigger-build');
+
+      // Poll for the build status after 2 seconds
+      setTimeout(async () => {
+        const response = await axios.get('http://localhost:5000/api/build-status');
+        setStatus(response.data.status);
+        setBuildResult(response.data.status === 'success' ? '✅ Build succeeded' : '❌ Build failed');
+      }, 2000);
+    } catch (error) {
+      console.error('Error triggering build:', error);
+      setStatus('fail');
+      setBuildResult('❌ Build failed');
+    }
   };
 
   return (
